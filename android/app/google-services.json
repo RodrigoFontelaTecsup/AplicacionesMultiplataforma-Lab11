@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "1009162670643",
+    "project_id": "autenticacion-flutter-c3980",
+    "storage_bucket": "autenticacion-flutter-c3980.appspot.com"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:1009162670643:android:35ac018eaeca5b1f374946",
+        "android_client_info": {
+          "package_name": "com.example.tarealaboratorio11"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyBOLZ7M43KeLQIgfth7_-gr7Q7f3VDLBAY"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

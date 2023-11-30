@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
-import 'login.dart';
 import 'home.dart';
+import 'package:firebase_auth/firebase_auth.dart';
+import 'package:tarealaboratorio11/app/firebase_auth/firebase_auth_services.dart';
 
 class RegisterPage extends StatefulWidget {
   @override
@@ -8,9 +9,14 @@ class RegisterPage extends StatefulWidget {
 }
 
 class _RegisterPageState extends State<RegisterPage> {
-  TextEditingController _nameController = TextEditingController();
   TextEditingController _usernameController = TextEditingController();
+  TextEditingController _emailController = TextEditingController();
   TextEditingController _passwordController = TextEditingController();
+
+  // IMPORTANTE CREAR ESTAS DOS VARIABLES
+  final FirebaseAuthService _auth = FirebaseAuthService();
+  bool isSigningUp = false;
+
   String _selectedAvatar = 'assets/images/avatar.png';
 
   @override
@@ -42,7 +48,7 @@ class _RegisterPageState extends State<RegisterPage> {
               ),
               SizedBox(height: 20),
               TextFormField(
-                controller: _nameController,
+                controller: _usernameController,
                 decoration: InputDecoration(
                   labelText: 'Nombre',
                   border: OutlineInputBorder(),
@@ -50,7 +56,7 @@ class _RegisterPageState extends State<RegisterPage> {
               ),
               SizedBox(height: 12),
               TextFormField(
-                controller: _usernameController,
+                controller: _emailController,
                 decoration: InputDecoration(
                   labelText: 'Nombre de Usuario',
                   border: OutlineInputBorder(),
@@ -68,13 +74,7 @@ class _RegisterPageState extends State<RegisterPage> {
               SizedBox(height: 20),
               ElevatedButton(
                 onPressed: () {
-                  if (_nameController.text.isNotEmpty &&
-                      _usernameController.text.isNotEmpty &&
-                      _passwordController.text.isNotEmpty) {
-                    _showAccountCreatedDialog(context);
-                  } else {
-                    _showErrorDialog('Por favor, completa todos los campos.');
-                  }
+                  _signUp();
                 },
                 child: Text('Crear Cuenta'),
               ),
@@ -85,54 +85,69 @@ class _RegisterPageState extends State<RegisterPage> {
     );
   }
 
-  void _showAccountCreatedDialog(BuildContext context) {
-    showDialog(
-      context: context,
-      builder: (BuildContext context) {
-        return AlertDialog(
-          title: Text('Cuenta Creada'),
-          content: Text('¡Tu cuenta se ha creado exitosamente!'),
-          actions: [
-            TextButton(
-              onPressed: () {
-                Navigator.pop(context); // Cerrar el diálogo
+  void _signUp() async {
+    setState(() {
+      isSigningUp = true;
+    });
 
-                // Navegar a la pantalla de inicio después de crear la cuenta
-                Navigator.pushReplacement(
-                  context,
-                  MaterialPageRoute(
-                    builder: (context) => MyHomePage(
+    String username = _usernameController.text;
+    String email = _emailController.text;
+    String password = _passwordController.text;
+
+    User? user = await _auth.signUpWithEmailAndPassword(email, password);
+
+    setState(() {
+      isSigningUp = false;
+    });
+
+    if (user != null) {
+      showDialog(
+        context: context,
+        builder: (BuildContext context) {
+          return AlertDialog(
+            title: Text('Cuenta Creada'),
+            content: Text('¡Tu cuenta se ha creado exitosamente!'),
+            actions: [
+              TextButton(
+                onPressed: () {
+                  Navigator.pop(context); // Cerrar el diálogo
+
+                  // Navegar a la pantalla de inicio después de crear la cuenta
+                  Navigator.pushReplacement(
+                    context,
+                    MaterialPageRoute(
+                      builder: (context) => MyHomePage(
                         title: 'Flutter Demo',
-                        username: _usernameController.text),
-                  ),
-                );
-              },
-              child: Text('OK'),
-            ),
-          ],
-        );
-      },
-    );
-  }
-
-  void _showErrorDialog(String message) {
-    showDialog(
-      context: context,
-      builder: (BuildContext context) {
-        return AlertDialog(
-          title: Text('Error'),
-          content: Text(message),
-          actions: [
-            TextButton(
-              onPressed: () {
-                Navigator.pop(context); // Cerrar el diálogo
-              },
-              child: Text('OK'),
-            ),
-          ],
-        );
-      },
-    );
+                        username: _emailController.text,
+                      ),
+                    ),
+                  );
+                },
+                child: Text('OK'),
+              ),
+            ],
+          );
+        },
+      );
+    } else {
+      showDialog(
+        context: context,
+        builder: (BuildContext context) {
+          return AlertDialog(
+            title: Text('Error'),
+            content: Text('Algo salió mal durante el registro.'),
+            actions: [
+              TextButton(
+                onPressed: () {
+                  Navigator.pop(context); // Cerrar el diálogo
+                },
+                child: Text('OK'),
+              ),
+            ],
+          );
+        },
+      );
+    }
   }
 
   void _showAvatarSelectionDialog() {

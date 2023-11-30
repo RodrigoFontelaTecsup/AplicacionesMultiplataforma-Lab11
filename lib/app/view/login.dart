@@ -3,15 +3,20 @@ import 'package:tarealaboratorio11/app/view/register.dart';
 import 'package:tarealaboratorio11/app/view/home.dart';
 import 'package:tarealaboratorio11/app/model/favorite_widget.dart';
 
+import 'package:firebase_auth/firebase_auth.dart';
+import 'package:firebase_core/firebase_core.dart';
+import 'package:tarealaboratorio11/app/firebase_auth/firebase_auth_services.dart';
+
 class LoginPage extends StatefulWidget {
   @override
   _LoginPageState createState() => _LoginPageState();
 }
 
 class _LoginPageState extends State<LoginPage> {
-  TextEditingController _usernameController = TextEditingController();
+  final FirebaseAuthService _auth = FirebaseAuthService();
+  final FirebaseAuth _firebaseAuth = FirebaseAuth.instance;
+  TextEditingController _emailController = TextEditingController();
   TextEditingController _passwordController = TextEditingController();
-  bool _isFavorited = false; // Nuevo estado para el botón favorito
 
   @override
   Widget build(BuildContext context) {
@@ -37,9 +42,9 @@ class _LoginPageState extends State<LoginPage> {
               ),
               SizedBox(height: 20),
               TextFormField(
-                controller: _usernameController,
+                controller: _emailController,
                 decoration: InputDecoration(
-                  labelText: 'Usuario',
+                  labelText: 'Correo electrónico',
                   border: OutlineInputBorder(),
                 ),
               ),
@@ -55,47 +60,20 @@ class _LoginPageState extends State<LoginPage> {
               SizedBox(height: 20),
               ElevatedButton(
                 onPressed: () {
-                  if (_usernameController.text.isNotEmpty &&
-                      _passwordController.text.isNotEmpty) {
-                    if (_isPasswordStrong(_passwordController.text)) {
-                      print('Iniciando Sesión');
-                      _showLoginSuccessDialog(_usernameController.text);
-                    } else {
-                      _showErrorDialog(
-                          'La contraseña debe tener al menos 8 caracteres y un número.');
-                    }
-                  } else {
-                    _showErrorDialog('Por favor, completa todos los campos.');
-                  }
+                  _signIn();
                 },
-                // Cambios aquí para manejar el estado del botón favorito
-                style: ElevatedButton.styleFrom(
-                  primary: _isFavorited ? Colors.red[700] : null,
-                ),
-                child: Row(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: [
-                    Text('Iniciar Sesión'),
-                    SizedBox(width: 8),
-                    FavoriteWidget(
-                      isFavorited: _isFavorited,
-                      onPressed: () {
-                        setState(() {
-                          _isFavorited = !_isFavorited;
-                        });
-                      },
-                    ),
-                  ],
-                ),
+                child: Text('Iniciar Sesión'),
               ),
               SizedBox(height: 15),
               GestureDetector(
                 onTap: () {
-                  Navigator.push(context,
-                      MaterialPageRoute(builder: (context) => RegisterPage()));
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(builder: (context) => RegisterPage()),
+                  );
                 },
                 child: Text(
-                  'Aun no tienes una cuenta? Registrate aqui!',
+                  '¿Aún no tienes una cuenta? Regístrate aquí.',
                   style: TextStyle(fontSize: 15, fontWeight: FontWeight.w300),
                   textAlign: TextAlign.center,
                 ),
@@ -107,35 +85,43 @@ class _LoginPageState extends State<LoginPage> {
     );
   }
 
-  void _showLoginSuccessDialog(String username) {
-    showDialog(
-      context: context,
-      builder: (BuildContext context) {
-        return AlertDialog(
-          title: Text('Éxito'),
-          content: Text('Inicio de sesión exitoso'),
-          actions: [
-            TextButton(
-              onPressed: () {
-                Navigator.pop(context);
-                Navigator.pushReplacement(
-                  context,
-                  MaterialPageRoute(
-                    builder: (context) =>
-                        MyHomePage(title: 'Flutter Demo', username: username),
-                  ),
-                );
-              },
-              child: Text('OK'),
-            ),
-          ],
-        );
-      },
-    );
-  }
+  void _signIn() async {
+    try {
+      UserCredential userCredential = await FirebaseAuth.instance
+          .signInWithEmailAndPassword(
+              email: _emailController.text, password: _passwordController.text);
 
-  bool _isPasswordStrong(String password) {
-    return password.length >= 8 && password.contains(RegExp(r'\d'));
+      showDialog(
+        context: context,
+        builder: (BuildContext context) {
+          return AlertDialog(
+            title: Text('Éxito'),
+            content: Text('Inicio de sesión exitoso'),
+            actions: [
+              TextButton(
+                onPressed: () {
+                  Navigator.pop(context);
+                  Navigator.pushReplacement(
+                    context,
+                    MaterialPageRoute(
+                      builder: (context) => MyHomePage(
+                        title: 'Flutter Demo',
+                        username: _emailController.text,
+                      ),
+                    ),
+                  );
+                },
+                child: Text('OK'),
+              ),
+            ],
+          );
+        },
+      );
+      // SI SE GENERO ALGUN ERROR DURANTE LA AUTENTICACION
+    } on FirebaseAuthException catch (e) {
+      print('Error de inicio de sesión: $e');
+      _showErrorDialog('Error al iniciar sesión. Verifica tus credenciales.');
+    }
   }
 
   void _showErrorDialog(String message) {
